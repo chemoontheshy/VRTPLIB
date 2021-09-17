@@ -101,31 +101,31 @@ int main(void)
 	checkerror(status);
 
 
-	uint8_t data[10200] = { 0 };
+	uint8_t data[10201] = { 0 };
 	uint8_t* a = (uint8_t*)(&data);
-	/*FakeHeader hevcHeader;
+	FakeHeader hevcHeader;
 	hevcHeader.flag = 0;
 	hevcHeader.type = 23;
 	hevcHeader.layerId_1 = 0;
 	hevcHeader.layerId_2 = 0;
-	hevcHeader.tid = 1;*/
+	hevcHeader.tid = 1;
 
-	/*memcpy(a - 2, &hevcHeader, 2);
+	memcpy(a - 2, &hevcHeader, 2);
 	Packet packet;
 	packet.data = a - 2;
-	packet.len = 10200;*/
+	packet.len = 10200;
 
-	H264_Indicator h264Header;
-	h264Header.flag = 0;
-	h264Header.nal_ref_idc = 0;
-	h264Header.nal_uint_type = 7;
+	//H264_Indicator h264Header;
+	//h264Header.flag = 0;
+	//h264Header.nal_ref_idc = 0;
+	//h264Header.nal_uint_type = 7;
 
-	Packet h264_packet;
-	memcpy(a - 1, &h264Header, 1);
-	h264_packet.data = a - 1;
-	h264_packet.len = 10200;
+	//Packet h264_packet;
+	//memcpy(a - 1, &h264Header, 1);
+	//h264_packet.data = a - 1;
+	//h264_packet.len = 10200;
 
-	auto packets = rawpack_fu_H264(h264_packet);
+	auto packets = rawpack_fu_HEVC(packet);
 	for (auto p : packets)
 	{
 		std::cout << p.len << std::endl;

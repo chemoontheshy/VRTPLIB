@@ -100,7 +100,7 @@ std::vector<Packet> vsnc::test::rawpack_fu_H264(Packet pack)
 	
 	//去掉nalu头
 	pack_ptr = pack_ptr + 1;
-	//保持尾部不变，往前移num个字节，保证填充FU头（共2个字节）
+	//保持尾部不变，往前移num个字节，保证填充FU头（共2*分包数个字节）
 	_len num = pack_len / MAXSIZE;
 	if (pack_len / MAXSIZE) num += 1;
 	std::vector<Packet> packets;
@@ -122,12 +122,11 @@ std::vector<Packet> vsnc::test::rawpack_fu_H264(Packet pack)
 		else {
 			h264_FuHededer.s = 0;
 		}
-		memcpy(temp_packt.data + 1, &h264_FuHededer, 1);
 		auto temp_len = getMin(pack_len, MAXSIZE);
+		memcpy(temp_packt.data + 1, &h264_FuHededer, 1);
 		memcpy(temp_packt.data + 2, pack_ptr, temp_len);
 		temp_packt.len = temp_len +2;
 		packets.push_back(temp_packt);
-		num--;
 		pack_ptr += temp_len;
 		pack_len -= temp_len;
 		num--;
@@ -143,18 +142,17 @@ std::vector<Packet> vsnc::test::rawpack_fu_HEVC(Packet pack)
 	uint8_t head1 = *src;
 	uint8_t head2 = *(src + 1);
 
-	//HEVC_header
+	//HEVC_Indicator
 	HEVC_Indicator hevcHeader;
-	hevcHeader.flag = head1 & 0x80;
-	//hevcHeader.layerId = (head1 & 0x7e)>>1;
-	//hevcHeader.layerId = head1 & 0x01 + head2 & 0xf8;
+	hevcHeader.flag = head1 & 0x80;    
+
 	hevcHeader.layerId_1 = head1 & 0x01;
 	hevcHeader.layerId_2 = head2 & 0xf8;
 	//fu分包规定的Type = 49
 	hevcHeader.type = 49;
 	hevcHeader.tid = head2 & 0x07;
 
-	///FU_header
+	///HEVC_FUheader
 	HEVC_FUheader fuheader;
 	fuheader.type = (head1 & 0x7e) >> 1;
 	fuheader.S = 0;
@@ -165,7 +163,7 @@ std::vector<Packet> vsnc::test::rawpack_fu_HEVC(Packet pack)
 
 	//先把HEVCHeader去掉
 	src = src + 2;
-	//保持尾部不变，往前移num个字节，保证填充FU头（共3个字节）
+	//保持尾部不变，num为分包数个数，往前移3*num个字节，保证填充FU头（共3*num个字节）
 	_len num = len / MAXSIZE;
 	if (len / MAXSIZE) num += 1;
 
@@ -175,39 +173,29 @@ std::vector<Packet> vsnc::test::rawpack_fu_HEVC(Packet pack)
 		packt.data = src - num * 3;
 		packt.len = 0;
 		//end
+		memcpy(packt.data, &hevcHeader, 2);
 		if (len < MAXSIZE)
 		{
 			fuheader.E = 1;
-			memcpy(packt.data, &hevcHeader, 2);
-			memcpy(packt.data + 2, &fuheader, 1);
-			memcpy(packt.data + 3, src, len);
-			packt.len = len+3;
-			packets.push_back(packt);
-			break;
-
 		}
 		//start
 		if (start)
 		{
 			fuheader.S = 1;
-			memcpy(packt.data, &hevcHeader, 2);
-			memcpy(packt.data + 2, &fuheader, 1);
-			memcpy(packt.data + 3, src, MAXSIZE);
 			start = false;
 		}
 		//middle
 		else {
 			fuheader.S = 0;
-			fuheader.E = 0;
-			memcpy(packt.data, &hevcHeader, 2);
-			memcpy(packt.data + 2, &fuheader, 1);
-			memcpy(packt.data + 3, src, MAXSIZE);
 		}
-		src = src + MAXSIZE;
-		len = len - MAXSIZE;
-		num--;
-		packt.len = MAXSIZE+3;
+		auto temp_len = getMin(len, MAXSIZE);
+		memcpy(packt.data + 2, &fuheader, 1);
+		memcpy(packt.data + 3, src, temp_len);
+		packt.len = temp_len +3;
 		packets.push_back(packt);
+		src = src + temp_len;
+		len = len - temp_len;
+		num--;
 	}
 	return packets;
 }
