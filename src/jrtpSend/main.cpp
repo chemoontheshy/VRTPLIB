@@ -16,9 +16,11 @@
 #include <string>
 #include <bitset>
 #include "fu_raw.h"
+#include "splitnalu.h"
 
 using namespace jrtplib;
 using namespace vsnc::test;
+using namespace vsnc::vfua;
 
 void checkerror(int rtperr)
 {
@@ -54,6 +56,7 @@ struct H264_Indicator
 #endif // RTP_BIG_ENDIAN
 
 };
+constexpr const _len MAXSIZE = 1200;
 
 int main(void)
 {
@@ -88,7 +91,7 @@ int main(void)
 	RTPUDPv4TransmissionParams transparams;
 	RTPSessionParams sessparams;
 
-	sessparams.SetOwnTimestampUnit(1.0 / 10.0);
+	sessparams.SetOwnTimestampUnit(25.0 / 90000.0);
 
 	sessparams.SetAcceptOwnPackets(true);
 	transparams.SetPortbase(portbase);
@@ -101,19 +104,19 @@ int main(void)
 	checkerror(status);
 
 
-	uint8_t data[10201] = { 0 };
-	uint8_t* a = (uint8_t*)(&data);
-	FakeHeader hevcHeader;
-	hevcHeader.flag = 0;
-	hevcHeader.type = 23;
-	hevcHeader.layerId_1 = 0;
-	hevcHeader.layerId_2 = 0;
-	hevcHeader.tid = 1;
+	//uint8_t data[10201] = { 0 };
+	//uint8_t* a = (uint8_t*)(&data);
+	//FakeHeader hevcHeader;
+	//hevcHeader.flag = 0;
+	//hevcHeader.type = 23;
+	//hevcHeader.layerId_1 = 0;
+	//hevcHeader.layerId_2 = 0;
+	//hevcHeader.tid = 1;
 
-	memcpy(a - 2, &hevcHeader, 2);
-	Packet packet;
-	packet.data = a - 2;
-	packet.len = 10200;
+	//memcpy(a - 2, &hevcHeader, 2);
+	//Packet packet;
+	//packet.data = a - 2;
+	//packet.len = 10200;
 
 	//H264_Indicator h264Header;
 	//h264Header.flag = 0;
@@ -125,22 +128,50 @@ int main(void)
 	//h264_packet.data = a - 1;
 	//h264_packet.len = 10200;
 
-	auto packets = rawpack_fu_HEVC(packet);
-	for (auto p : packets)
+	//auto packets = rawpack_fu_HEVC(packet);
+	Parser paerser("..\\..\\3rd\\video\\cat_hevc.h265");
+	while (true)
 	{
-		std::cout << p.len << std::endl;
-		status = sess.SendPacket(p.data, p.len, 0, false, 10);
-		checkerror(status);
-		RTPTime::Wait(RTPTime(1, 0));
-	}
-	
-	
-	//for (i = 1; i <= num; i++)
-	//{
-	//	printf("\nSending packet %d/%d\n", i, num);
+		auto cur_frame = paerser.get_next_frame();
+		auto data = cur_frame.data;
+		auto length = cur_frame.len;
 
-	//	status = sess.SendPacket((void*)"1234567890", 10, 0, false, 10);
-	//	//status = sess.SendPacketEx((void*)"1234567890", 10, 10,0,10,232, "0987654321", 3);
+		if (length < 0)
+		{
+			std::cout << "H264::getOneFrame() failed" << std::endl;
+			break;
+		}
+		else if (!length)
+		{
+			fprintf(stdout, "Finish serving the user\n");
+			return 0;
+		}
+		_len64 start_code_len = Parser::is_start_code(data, length, 4) ? 4 : 3;
+		data += start_code_len;
+		length -= start_code_len;
+		if (length < MAXSIZE)
+		{
+			status = sess.SendPacket(data, length, 96, false, 3600);
+			checkerror(status);
+			continue;
+		}
+		Packet packet;
+		packet.data = data;
+		packet.len = length;
+		auto packets = rawpack_fu_HEVC(packet);
+		bool _mark = false;
+		for (auto pkt : packets) {
+			status = sess.SendPacket(pkt.data, pkt.len, 96, false, 3600);
+			checkerror(status);
+		}
+		//std::cout << length << std::endl;
+		//std::cout << cur_frame.len << std::endl;
+		Sleep(40);
+	}
+	//for (auto p : packets)
+	//{
+	//	std::cout << p.len << std::endl;
+	//	status = sess.SendPacket(p.data, p.len, 96, false, 10);
 	//	checkerror(status);
 	//	RTPTime::Wait(RTPTime(1, 0));
 	//}

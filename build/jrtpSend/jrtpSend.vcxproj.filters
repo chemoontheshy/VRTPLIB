@@ -3,8 +3,12 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\jrtpSend\main.cpp" />
     <ClCompile Include="..\..\src\jrtpSend\fu_raw.cpp" />
+    <ClCompile Include="..\..\src\jrtpSend\splitnalu.cpp" />
+    <ClCompile Include="..\..\src\jrtpSend\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\jrtpSend\fu_raw.h" />
+    <ClInclude Include="..\..\src\jrtpSend\splitnalu.h" />
+    <ClInclude Include="..\..\src\jrtpSend\utils.h" />
   </ItemGroup>
 </Project>

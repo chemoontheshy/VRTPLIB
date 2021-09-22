@@ -6,10 +6,6 @@
 
 typedef uint8_t* _pkt;
 typedef std::size_t _len;
-
-
-
-
 namespace vsnc
 {
 	namespace test

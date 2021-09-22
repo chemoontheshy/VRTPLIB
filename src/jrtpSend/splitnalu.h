@@ -11,7 +11,7 @@
 /*-----------H264----------------*/
 typedef uint8_t		_var;
 typedef uint8_t*	_ptr;
-typedef int64_t		_len;
+typedef int64_t		_len64;
 
 constexpr _var NALU_NRI_MASK = 0x60;
 constexpr _var NALU_F_NRI_MASK = 0xE0;
@@ -30,7 +30,7 @@ namespace vsnc
 		struct Nalu
 		{
 			_ptr data =nullptr;
-			_len len=0;
+			_len64 len=0;
 		};
 
 		class Parser
@@ -39,12 +39,12 @@ namespace vsnc
 			explicit Parser(const char* filename);
 			~Parser();
 
-			static bool is_start_code(const _ptr _buffer, _len bufLen, _var start_code_type);
+			static bool is_start_code(const _ptr _buffer, _len64 bufLen, _var start_code_type);
 			Nalu get_next_frame();
 
 		private:
 			int fd = -1;
-			static const _ptr find_next_start_code(_ptr _buffer, const _len bufLen);
+			static const _ptr find_next_start_code(_ptr _buffer, const _len64 bufLen);
 			std::string m_filename;
 			/// <summary>文件地址指针</summary>
 			_ptr ptr_mapped_file_cur = nullptr;
@@ -56,7 +56,7 @@ namespace vsnc
 			_ptr ptr_mapped_file_end = nullptr;
 
 			/// <summary>文件长度</summary>
-			_len file_size = 0;
+			_len64 file_size = 0;
 			char* buffer;
 		};
 

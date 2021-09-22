@@ -3,7 +3,7 @@
 
 using namespace vsnc::test;
 
-constexpr const _len MAXSIZE = 1000;
+constexpr const _len MAXSIZE = 1200;
 
 
 struct HEVC_Indicator
@@ -83,10 +83,9 @@ std::vector<Packet> vsnc::test::rawpack_fu_H264(Packet pack)
 	uint8_t* pack_ptr = pack.data;
 	_len pack_len = pack.len;
 	uint8_t head1 =*pack_ptr;
-
 	H264_Indicator h264_Indicator;
 	h264_Indicator.flag = head1 & 0x80;
-	h264_Indicator.nal_ref_idc = head1 & 040;
+	h264_Indicator.nal_ref_idc = head1>>5 & 0x3;
 	h264_Indicator.nal_uint_type = 28;
 	
 	H264_FUHeader  h264_FuHededer;
@@ -146,12 +145,12 @@ std::vector<Packet> vsnc::test::rawpack_fu_HEVC(Packet pack)
 	HEVC_Indicator hevcHeader;
 	hevcHeader.flag = head1 & 0x80;    
 
-	hevcHeader.layerId_1 = head1 & 0x01;
-	hevcHeader.layerId_2 = head2 & 0xf8;
+	hevcHeader.layerId_1 = (head1 & 0x01)<<7;
+	hevcHeader.layerId_2 = (head2 & 0xf8)>>3;
 	//fu分包规定的Type = 49
 	hevcHeader.type = 49;
-	hevcHeader.tid = head2 & 0x07;
-
+	hevcHeader.tid = head2 & 0x7;
+	auto a = head2 << 5;
 	///HEVC_FUheader
 	HEVC_FUheader fuheader;
 	fuheader.type = (head1 & 0x7e) >> 1;
