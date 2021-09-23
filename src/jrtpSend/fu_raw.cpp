@@ -98,7 +98,8 @@ std::vector<Packet> vsnc::test::rawpack_fu_H264(Packet pack)
 	bool start = true;
 	
 	//去掉nalu头
-	pack_ptr = pack_ptr + 1;
+	pack_ptr += 1;
+	pack_len -= 1;
 	//保持尾部不变，往前移num个字节，保证填充FU头（共2*分包数个字节）
 	_len num = pack_len / MAXSIZE;
 	if (pack_len / MAXSIZE) num += 1;
@@ -161,7 +162,8 @@ std::vector<Packet> vsnc::test::rawpack_fu_HEVC(Packet pack)
 	bool start = true;
 
 	//先把HEVCHeader去掉
-	src = src + 2;
+	src += 2;
+	len -= 2;
 	//保持尾部不变，num为分包数个数，往前移3*num个字节，保证填充FU头（共3*num个字节）
 	_len num = len / MAXSIZE;
 	if (len / MAXSIZE) num += 1;
