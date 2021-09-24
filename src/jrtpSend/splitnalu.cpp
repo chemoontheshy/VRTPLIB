@@ -85,6 +85,6 @@ Nalu Parser::get_next_frame()
 	nalu.data = ptr_mapped_file_cur;
 	nalu.len = frame_size;
 	ptr_mapped_file_cur += frame_size;
-	std::cout << nalu.len << std::endl;
+	//std::cout << nalu.len << std::endl;
 	return nalu;
 }

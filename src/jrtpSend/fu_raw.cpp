@@ -5,6 +5,11 @@ using namespace vsnc::test;
 
 constexpr const _len MAXSIZE = 1200;
 
+// +------------------------------ +---------------------------- - +
+// | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+--+-+-+-+-+-+-+-+-+-+-+-
+// | F |		Type		   |        LayerId				 | TID |
+// +---+-------------------- - +-------------------------- - +-- - +
 
 struct HEVC_Indicator
 {
@@ -80,37 +85,36 @@ _len getMin(_len a, _len b)
 
 std::vector<Packet> vsnc::test::rawpack_fu_H264(Packet pack)
 {
-	uint8_t* pack_ptr = pack.data;
-	_len pack_len = pack.len;
-	uint8_t head1 =*pack_ptr;
+	auto data = pack.data;
+	auto length = pack.len;
 	H264_Indicator h264_Indicator;
-	h264_Indicator.flag = head1 & 0x80;
-	h264_Indicator.nal_ref_idc = head1>>5 & 0x3;
+	h264_Indicator.flag = (*data & 0x80)>>7;
+	h264_Indicator.nal_ref_idc = (*data & 0x60)>>5;
 	h264_Indicator.nal_uint_type = 28;
 	
 	H264_FUHeader  h264_FuHededer;
 	h264_FuHededer.e = 0;
 	h264_FuHededer.r = 0;
 	h264_FuHededer.s = 0;
-	h264_FuHededer.type = head1 & 0x1f;
+	h264_FuHededer.type = *pack.data & 0x1f;
 
 	//开始标志
 	bool start = true;
 	
 	//去掉nalu头
-	pack_ptr += 1;
-	pack_len -= 1;
+	data += 1;
+	length -= 1;
 	//保持尾部不变，往前移num个字节，保证填充FU头（共2*分包数个字节）
-	_len num = pack_len / MAXSIZE;
-	if (pack_len / MAXSIZE) num += 1;
+	_len num = length / MAXSIZE;
+	if (length / MAXSIZE) num += 1;
 	std::vector<Packet> packets;
-	while (pack_len > 0)
+	while (length > 0)
 	{
 		Packet temp_packt;
-		temp_packt.data = pack_ptr - num * 2;
+		temp_packt.data = data - num * 2;
 		//无论那个都需要nal_indicator,故可以先复制内存,
 		memcpy(temp_packt.data, &h264_Indicator, 1);
-		if (pack_len < MAXSIZE)
+		if (length < MAXSIZE)
 		{
 			h264_FuHededer.e = 1;
 		}
@@ -122,13 +126,13 @@ std::vector<Packet> vsnc::test::rawpack_fu_H264(Packet pack)
 		else {
 			h264_FuHededer.s = 0;
 		}
-		auto temp_len = getMin(pack_len, MAXSIZE);
+		auto temp_len = getMin(length, MAXSIZE);
 		memcpy(temp_packt.data + 1, &h264_FuHededer, 1);
-		memcpy(temp_packt.data + 2, pack_ptr, temp_len);
+		memcpy(temp_packt.data + 2, data, temp_len);
 		temp_packt.len = temp_len +2;
 		packets.push_back(temp_packt);
-		pack_ptr += temp_len;
-		pack_len -= temp_len;
+		data += temp_len;
+		length -= temp_len;
 		num--;
 	}
 

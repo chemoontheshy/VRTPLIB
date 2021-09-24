@@ -129,7 +129,7 @@ int main(void)
 	//h264_packet.len = 10200;
 
 	//auto packets = rawpack_fu_HEVC(packet);
-	Parser paerser("..\\..\\3rd\\video\\cat_hevc.h265");
+	Parser paerser("..\\..\\3rd\\video\\cat_h264.h264");
 	while (true)
 	{
 		auto cur_frame = paerser.get_next_frame();
@@ -158,7 +158,7 @@ int main(void)
 		Packet packet;
 		packet.data = data;
 		packet.len = length;
-		auto packets = rawpack_fu_HEVC(packet);
+		auto packets = rawpack_fu_H264(packet);
 		bool _mark = false;
 		for (auto pkt : packets) {
 			status = sess.SendPacket(pkt.data, pkt.len, 96, false, 3600);
